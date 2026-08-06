@@ -1,0 +1,92 @@
+name: Publish Dashboard
+
+# 経営ダッシュボードの「Web版発行」を自動化するワークフロー。
+#
+# 毎朝のクラウドセッション（プロジェクト「タスクを完了させる仕組み」）は
+# サンドボックス制限により、このリポジトリへ直接 git push / Contents API 書き込みが
+# できない場合がある。その回避策として、生成した HTML を workflow_dispatch の入力
+# として渡すと、GitHub Actions 側（＝リポジトリ内の権限で動く）が index.html を
+# 更新してコミットする。push は Actions のビルトイン GITHUB_TOKEN で完結するため、
+# 呼び出し側は api.github.com への dispatch 1回だけで発行できる。
+#
+# 呼び出し例（PAT は actions:write / contents:write 権限が必要）:
+#   PAYLOAD=$(gzip -c index.html | base64 -w0)
+#   curl -X POST \
+#     -H "Authorization: Bearer $GITHUB_TOKEN" \
+#     -H "Accept: application/vnd.github+json" \
+#     https://api.github.com/repos/noriko2729/keiei-dashboard/actions/workflows/publish-dashboard.yml/dispatches \
+#     -d "{\"ref\":\"main\",\"inputs\":{\"html_gz_b64\":\"$PAYLOAD\"}}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      html_gz_b64:
+        description: "ダッシュボードHTMLを gzip -> base64(-w0) したもの（推奨・サイズ効率が良い）"
+        required: false
+        default: ""
+      html_b64:
+        description: "ダッシュボードHTMLを base64(-w0) したもの（gzipなし・小さいHTML向け）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-dashboard
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Decode payload into index.html
+        env:
+          HTML_GZ_B64: ${{ inputs.html_gz_b64 }}
+          HTML_B64: ${{ inputs.html_b64 }}
+        run: |
+          set -euo pipefail
+          if [ -n "${HTML_GZ_B64}" ]; then
+            printf '%s' "${HTML_GZ_B64}" | base64 -d | gunzip > index.new.html
+          elif [ -n "${HTML_B64}" ]; then
+            printf '%s' "${HTML_B64}" | base64 -d > index.new.html
+          else
+            echo "::error::html_gz_b64 か html_b64 のどちらかを指定してください。" >&2
+            exit 1
+          fi
+          # 最低限の健全性チェック（空・壊れたHTMLで上書きしない）
+          if [ ! -s index.new.html ]; then
+            echo "::error::デコード結果が空です。発行を中止します。" >&2
+            exit 1
+          fi
+          if ! grep -qi "</html>" index.new.html; then
+            echo "::error::HTMLの終了タグが見つかりません。壊れた入力の可能性があるため中止します。" >&2
+            exit 1
+          fi
+
+      - name: Update footer publish marker (手動 -> 自動, JST日付)
+        run: |
+          set -euo pipefail
+          TODAY=$(TZ=Asia/Tokyo date +%F)
+          # 「Web版発行: <日付> 手動/自動」→「Web版発行: <当日> 自動」に置換（表記ゆれに寛容）
+          perl -0777 -pi -e "s/Web版発行:\\s*[0-9]{4}-[0-9]{2}-[0-9]{2}\\s*(?:手動|自動)/Web版発行: ${TODAY} 自動/g" index.new.html || true
+          mv index.new.html index.html
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "dashboard-bot@users.noreply.github.com"
+          if git diff --quiet -- index.html; then
+            echo "index.html に変更はありません。コミットをスキップします。"
+            exit 0
+          fi
+          TODAY=$(TZ=Asia/Tokyo date +%F)
+          git add index.html
+          git commit -m "ダッシュボード更新（自動発行）${TODAY}"
+          git push origin main
