@@ -37,10 +37,29 @@ HTMLを生成
 実際の commit / push は Actions のビルトイン `GITHUB_TOKEN`（`contents: write`）で
 完結するので、リポジトリ用の個人トークンを push に使う必要がなくなる。
 
-## セットアップ手順
+## 最短の解決策（本命）
 
-### 1. このブランチを main にマージする
-`.github/workflows/publish-dashboard.yml` を main に取り込むと、ワークフローが有効になる。
+いちばん確実なのは、**毎朝のスケジュール実行環境に `noriko2729/keiei-dashboard` を
+連携リポジトリとして許可する**こと（Cowork / Claude 側の環境設定）。これができれば、
+既存の `publish_dashboard.py`（Contents API）や git push フォールバックがそのまま通り、
+新しいコードは不要でWeb版発行が自動化される。手順文にある
+
+> 「git proxy ... not in this session's authorized repository set」
+
+というエラーは、この連携が未設定であることを示している。
+
+下記の GitHub Actions ワークフローは、**git push が塞がれていても API 1回で発行できる
+代替経路**（＝リポジトリ側で push を完結）として用意したもの。どちらの経路でも、
+最終的には「毎朝の環境から api.github.com へ到達できること」が前提になる。
+
+## セットアップ手順（Actions 経路）
+
+### 1. ワークフローを main に取り込む（済）
+`.github/workflows/publish-dashboard.yml` は main にマージ済みで、すでに有効。
+
+### 1b. Actions の書き込み権限を確認
+Settings → Actions → General → Workflow permissions が **「Read and write permissions」**
+であること（ビルトイン `GITHUB_TOKEN` で index.html を push するため）。
 
 ### 2. GitHub Pages の確認（変更不要）
 Settings → Pages が「Deploy from a branch: main / (root)」であること。
@@ -59,18 +78,28 @@ Fine-grained personal access token を発行し、権限は以下だけを付与
 ### 4. 毎朝のタスク（手順7 = Web版発行）を差し替える
 生成HTMLを保存したフォルダで、次の要領で発行する。
 
+ペイロード（gzip+base64）は最大 65,535 文字まで。現行HTML（約34KB）は gzip で
+約13.5KB に収まる。**必ずファイル経由（`--data @file`）で送ること**。長い文字列を
+シェル変数やJSONにインラインで埋め込むと、経路によっては末尾が欠落して base64 が
+壊れる（デコード時に "number of data characters ... multiple of 4" エラーになる）。
+
 ```bash
 # 生成した index.html があるディレクトリで
-PAYLOAD=$(gzip -c index.html | base64 -w0)
+python3 - <<'PY' > /tmp/publish.json
+import gzip, base64, json
+b64 = base64.b64encode(gzip.compress(open("index.html","rb").read())).decode()
+json.dump({"ref": "main", "inputs": {"html_gz_b64": b64}}, open("/tmp/publish.json","w"))
+PY
 curl -sS -X POST \
   -H "Authorization: Bearer $PUBLISH_TOKEN" \
   -H "Accept: application/vnd.github+json" \
   https://api.github.com/repos/noriko2729/keiei-dashboard/actions/workflows/publish-dashboard.yml/dispatches \
-  -d "{\"ref\":\"main\",\"inputs\":{\"html_gz_b64\":\"$PAYLOAD\"}}"
+  --data @/tmp/publish.json
 ```
 
 - 成功時は HTTP 204。数十秒後に Actions が index.html を更新し、Pages が再デプロイする。
 - `$PUBLISH_TOKEN` はログ・応答本文に出力しないこと。
+- 発行後は Actions の実行結果（Publish Dashboard）が success か確認する。
 
 ## 手動での発行（フォールバック / 動作確認）
 
@@ -97,10 +126,23 @@ git push
 - 変更が無ければコミットをスキップ（無駄な発行を避ける）。
 - `GITHUB_TOKEN` で main に push → Pages が自動デプロイ。
 
-## 既知の制約
+## 既知の制約・注意
 
-- `workflow_dispatch` の各入力は 65,535 文字まで。gzip+base64 を使えば現行HTML
-  （約34KB）は十分収まる。将来HTMLが大きくなっても gzip 圧縮で余裕がある。
-- 万一 api.github.com への dispatch もサンドボックスで拒否される場合は、毎朝タスクの
-  実行環境に `noriko2729/keiei-dashboard` を**連携リポジトリとして許可**する必要がある
-  （Cowork/Claude の環境設定側の作業）。その場合は上記スクリプトがそのまま通るようになる。
+- `workflow_dispatch` の各入力は 65,535 文字まで。gzip+base64 なら現行HTML（約34KB）
+  は約13.5KBに収まる。**入力は必ず `--data @file` で送る**こと（インライン埋め込みは
+  経路によって末尾が欠落し、`number of data characters ... multiple of 4` エラーになる）。
+- Actions が push するには、リポジトリの Workflow permissions が
+  「Read and write」である必要がある（未設定だと push 段でコケる）。
+- **本命は環境のリポジトリ連携**。api.github.com への dispatch もサンドボックスで
+  拒否される場合は、毎朝タスクの実行環境に `noriko2729/keiei-dashboard` を連携リポジトリ
+  として許可する必要がある（Cowork/Claude の環境設定側の作業）。許可されれば、この
+  ワークフロー経路も、既存の `publish_dashboard.py`（Contents API）経路も通るようになる。
+
+## この Actions 経路の検証状況
+
+- ワークフローの YAML・デコード処理・フッター置換はローカルで検証済み（現行HTMLを
+  gzip+base64 → 復元で完全一致、フッターのみ差分）。
+- ただし **end-to-end の実発行は本セッションからは未検証**。テストに使った GitHub API
+  クライアント（MCP）が長い入力を切り詰めてしまい、正しいペイロードを送れなかったため。
+  実際の `curl --data @file` からの呼び出しでは切り詰めは起きない。
+- 初回本番前に、上記「手動での発行」または `curl` で1度発行して success を確認すること。
