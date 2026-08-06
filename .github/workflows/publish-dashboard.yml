@@ -51,23 +51,31 @@ jobs:
           HTML_B64: ${{ inputs.html_b64 }}
         run: |
           set -euo pipefail
-          if [ -n "${HTML_GZ_B64}" ]; then
-            printf '%s' "${HTML_GZ_B64}" | base64 -d | gunzip > index.new.html
-          elif [ -n "${HTML_B64}" ]; then
-            printf '%s' "${HTML_B64}" | base64 -d > index.new.html
-          else
-            echo "::error::html_gz_b64 か html_b64 のどちらかを指定してください。" >&2
-            exit 1
-          fi
-          # 最低限の健全性チェック（空・壊れたHTMLで上書きしない）
-          if [ ! -s index.new.html ]; then
-            echo "::error::デコード結果が空です。発行を中止します。" >&2
-            exit 1
-          fi
-          if ! grep -qi "</html>" index.new.html; then
-            echo "::error::HTMLの終了タグが見つかりません。壊れた入力の可能性があるため中止します。" >&2
-            exit 1
-          fi
+          # デコードは python3（ランナー標準）で行う。base64.b64decode は改行等の
+          # 非アルファベット文字を無視するため、coreutils より受け渡しに強い。
+          python3 - <<'PY'
+          import os, sys, base64, gzip
+          gz = (os.environ.get("HTML_GZ_B64") or "").strip()
+          b  = (os.environ.get("HTML_B64") or "").strip()
+          if gz:
+              raw = base64.b64decode(gz)
+              try:
+                  data = gzip.decompress(raw)
+              except OSError as e:
+                  sys.exit(f"::error::gzip 解凍に失敗（入力が途中で欠落した可能性）: {e}")
+          elif b:
+              data = base64.b64decode(b)
+          else:
+              sys.exit("::error::html_gz_b64 か html_b64 のどちらかを指定してください。")
+          if not data:
+              sys.exit("::error::デコード結果が空です。発行を中止します。")
+          text = data.decode("utf-8", "replace")
+          if "</html>" not in text.lower():
+              sys.exit("::error::HTMLの終了タグが見つかりません。壊れた入力の可能性があるため中止します。")
+          with open("index.new.html", "wb") as f:
+              f.write(data)
+          print(f"decoded ok: {len(data)} bytes")
+          PY
 
       - name: Update footer publish marker (手動 -> 自動, JST日付)
         run: |
