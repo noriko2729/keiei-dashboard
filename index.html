@@ -50,7 +50,6 @@
     background: var(--page); color: var(--ink-1); line-height: 1.55;
   }
   .app { display: flex; min-height: 100vh; max-width: 1280px; margin: 0 auto; }
-  /* sidebar (desktop) */
   nav.side {
     flex: 0 0 210px; padding: 20px 10px; border-right: 1px solid var(--grid);
     position: sticky; top: 0; height: 100vh; overflow-y: auto;
@@ -71,7 +70,6 @@
   }
   .navbtn .soon { margin-left: auto; font-size: 0.62rem; color: var(--ink-3); border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; }
   main { flex: 1; min-width: 0; padding: 20px 22px 40px; }
-  /* mobile top nav */
   nav.top { display: none; }
   @media (max-width: 820px) {
     nav.side { display: none; }
@@ -108,6 +106,8 @@
   .tl { list-style: none; }
   .tl li { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--grid); font-size: 0.87rem; }
   .tl li:last-child { border-bottom: none; }
+  .tl li.done { opacity: .55; }
+  .tl li.nowrow { background: var(--blue-bg); border-radius: 8px; padding-left: 8px; padding-right: 8px; }
   .tl .time { flex: 0 0 92px; font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 0.8rem; padding-top: 2px; white-space: nowrap; }
   .tl .body { flex: 1; min-width: 0; }
   .tl .title { font-weight: 600; }
@@ -117,6 +117,7 @@
   .badge.work { background: var(--blue-soft); color: var(--ink-1); border-color: transparent; opacity: .85; }
   .badge.conflict { background: var(--critical-bg); color: var(--critical); border-color: transparent; }
   .badge.dinner { background: var(--warning-bg); color: var(--serious); border-color: transparent; }
+  .badge.now { background: var(--blue); color: #fff; border-color: transparent; }
   .badge.src { background: var(--surface); }
   .gap { color: var(--good); font-size: 0.74rem; }
   .action { border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; background: var(--surface); display: flex; gap: 10px; align-items: flex-start; font-size: 0.85rem; }
@@ -140,8 +141,8 @@
   .week-row.today-row .fill { outline: 2px solid var(--blue-soft); }
   .week-row .val { flex: 0 0 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); font-size: 0.78rem; }
   .footnote { font-size: 0.73rem; color: var(--ink-3); margin-top: 8px; }
-  /* meeting prep cards */
   .mtgcard { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 12px 16px; margin-bottom: 10px; font-size: 0.86rem; }
+  .mtgcard.done { opacity: .6; }
   .mtgcard .head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
   .mtgcard .head .tt { font-weight: 700; }
   .mtgcard .head .tm { color: var(--ink-2); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
@@ -150,14 +151,13 @@
   .mtgcard .links { margin-top: 8px; font-size: 0.78rem; }
   .mtgcard .links a { color: var(--blue); text-decoration: none; margin-right: 12px; }
   .mtgcard .warnline { margin-top: 6px; font-size: 0.78rem; color: var(--critical); font-weight: 600; }
-  /* library */
+  .mtgcard .okline { margin-top: 6px; font-size: 0.78rem; color: var(--good); font-weight: 600; }
   .doc { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--grid); font-size: 0.85rem; }
   .doc:last-child { border-bottom: none; }
   .doc .ic { flex: 0 0 26px; text-align: center; font-size: 1rem; }
   .doc .tt { font-weight: 600; }
   .doc .dd { font-size: 0.76rem; color: var(--ink-3); }
   .doc a { color: var(--blue); text-decoration: none; }
-  /* automation */
   .auto { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; display: flex; gap: 10px; align-items: flex-start; }
   .st { flex: 0 0 auto; font-size: 0.68rem; font-weight: 700; border-radius: 999px; padding: 1px 9px; margin-top: 2px; }
   .st.ok { background: var(--good-bg); color: var(--good); }
@@ -178,7 +178,7 @@
 <nav class="side" id="sidenav">
   <div class="brand">経営ダッシュボード<small>Animo ｜ 橋本典子さま</small></div>
   <button class="navbtn active" data-v="home">🏠 ホーム</button>
-  <button class="navbtn" data-v="prep">📋 会議準備<span class="nbadge">2</span></button>
+  <button class="navbtn" data-v="prep">📋 会議準備<span class="nbadge">1</span></button>
   <button class="navbtn" data-v="inbox">📥 受信箱<span class="nbadge">5</span></button>
   <button class="navbtn" data-v="deals">🤝 商談・提案<span class="soon">準備中</span></button>
   <button class="navbtn" data-v="library">📁 資料ライブラリ</button>
@@ -201,103 +201,99 @@
 <div class="view active" id="v-home">
 <header class="page">
   <h1>ホーム</h1>
-  <div class="meta">2026年8月5日（水）生成 ｜ Google Calendar・Gmail 実測 ｜ 社長室合宿1日目（9:00–16:00）｜ 次回自動更新 8/6 07:00</div>
+  <div class="meta">2026年8月7日（金）14:05 更新（午後版・当日2回目） ｜ Google Calendar・Gmail 実測 ｜ 午前終了 → 残りは勝部さまMTG・EOウーマン・経費精算 ｜ 次回自動更新 8/10(月) 07:00</div>
 </header>
 
 <section>
   <div class="tiles">
-    <div class="tile"><div class="label">本日の予定</div><div class="value">1<small> 件</small></div><div class="sub">社長室合宿のみ。夜は今週唯一のフリー</div></div>
-    <div class="tile"><div class="label">拘束時間</div><div class="value">7.0<small> h</small></div><div class="sub">9:00〜16:00 ｜ 16時以降は空き</div></div>
-    <div class="tile alert"><div class="label">要注意</div><div class="value">5<small> 件</small></div><div class="sub">明日の砂田さん重複が期限切れ間近</div></div>
-    <div class="tile"><div class="label">未読メール（2日間）</div><div class="value">約57<small> 通</small></div><div class="sub">要対応 5件 ／ 大半はメルマガ・通知</div></div>
+    <div class="tile"><div class="label">本日の残り</div><div class="value">4<small> 件</small></div><div class="sub">作業枠（進行中）＋勝部さまMTG＋EOウーマン＋経費精算</div></div>
+    <div class="tile"><div class="label">拘束時間（本日計）</div><div class="value">11.5<small> h</small></div><div class="sub">〜17:00 ＋ 18:30–21:30 ＋ 23:00 経費精算</div></div>
+    <div class="tile alert"><div class="label">要注意</div><div class="value">6<small> 件</small></div><div class="sub">新着: 志岐さんシフト申請（13:57）— 17時の空きで一括処理を</div></div>
+    <div class="tile"><div class="label">未読メール（2日間）</div><div class="value">約50<small> 通</small></div><div class="sub">要対応 5件（新着1） ／ 大半はメルマガ・通知</div></div>
   </div>
 </section>
 
 <section>
-  <h2>⚠ 要注意 <span class="count">5件</span></h2>
-  <div class="alert-item"><div class="t">🔴 明日8/6(木) 13:00「砂田さん_活性協」が合宿2日目(9:00–16:00)と重複 — 3日連続未解消</div><div class="d">いよいよ明日です。リスケ連絡は今日が実質最後のタイミング。合宿の昼休憩に充てる場合は彩乃さん・巽さんへ中抜けの共有を。</div></div>
-  <div class="alert-item warn"><div class="t">🟠 井津元(彩乃)さんが今日・明日の社長室合宿とも出欠未回答</div><div class="d">巽さんは両日承諾済み。9:00開始前に一報の確認がおすすめです（Meet: rpj-nzuk-ggx）。</div></div>
-  <div class="alert-item warn"><div class="t">🟠 ジョブカン承認がさらに積み増し（今朝: 打刻エラー15件・未承認打刻1・休暇1・残業1・遅刻早退1）</div><div class="d">昨日からの滞留が未消化のまま増えています。ほかに三浦さん残業申請・志岐さんシフト申請・飯端さん打刻修正×3。合宿後16時以降の一括処理がおすすめ（約15分）。</div></div>
-  <div class="alert-item warn"><div class="t">🟠 デロイト塩部さんへの返信が3日目に</div><div class="d">「最新状況の共有」Teams会議の打診（石橋さん同報）。今夜の空き時間に候補日返信（8/11以降が現実的）を。下書きはチャットで指示いただければすぐ作ります。</div></div>
-  <div class="alert-item info"><div class="t">🔵 新着: 業績報告会の招待2件（9/30水・10/29木、いずれも10:00–18:00）— 出欠未回答</div><div class="d">井津元さんから。終日拘束のため早めのカレンダー確保・回答がおすすめです。</div></div>
+  <h2>⚠ 要注意 <span class="count">6件</span></h2>
+  <div class="alert-item warn"><div class="t">🟠 ジョブカン滞留: 打刻エラー9件・未承認休暇3件・未承認打刻1・残業1・遅刻早退1 ＋ 13:57に志岐春香さんのシフト申請が新着</div><div class="d">今朝から件数は横ばいのまま未処理です。17:00–18:30の空き90分が今日唯一のまとまった処理時間 — シフト申請も含めてここで一括承認がおすすめ。今朝は飯端さん（秘書室）の遅刻通知（9:11時点未出勤）もありました。</div></div>
+  <div class="alert-item warn"><div class="t">🟠 甲斐さん（大塚園）: 8/5・8/6分の事後休暇申請2件が未承認のまま</div><div class="d">昨日終日未出勤→今朝の事後申請。承認するか園長に状況確認するか、今日中の判断がおすすめです。</div></div>
+  <div class="alert-item warn"><div class="t">🟠 デロイト塩部さんへの返信が5日目 — 8/12(水)16:30にデロイト/SAP打合せあり</div><div class="d">「最新状況の共有」Teams会議の打診（石橋さん同報）。「12日の打合せで共有します」と1〜2行の一報を17時の空きで。下書きはチャットで指示いただければすぐ作ります。</div></div>
+  <div class="alert-item warn"><div class="t">🟠 来週8/13(木)17:00 RC営業定例 — ご自身未回答・ゲスト21名中13名辞退</div><div class="d">先週も同様に大半が辞退。参加予定がなければカレンダーで辞退回答を（1タップ）。辞退すれば8/13はほぼ終日空きになります。</div></div>
+  <div class="alert-item info"><div class="t">🔵 8/12(水) 14:00 グラミン定例 × 保育事業部予算会議の重複が未解消のまま</div><div class="d">予算会議は8/8(土)予算確定・8/9(日)合宿の直後の重要回。グラミンを別日にするか、遅れて合流するか、週明けまでに判断を。</div></div>
+  <div class="alert-item info"><div class="t">🔵 8/9(日)保育事業部合宿: 良さんが出欠未回答のまま（佐橋さんは承諾済み）</div><div class="d">明後日です。今日中に一声かけておくと確実です。</div></div>
 </section>
 
 <section>
-  <h2>🎯 今日のおすすめアクション</h2>
-  <div class="action"><span class="chip now">今すぐ</span><div><div class="t">砂田さん_活性協（明日13:00）の扱いを決めて連絡する</div><div class="d">合宿2日目と重複。リスケなら今日の連絡が先方への最後の礼儀ラインです。</div></div></div>
-  <div class="action"><span class="chip now">今すぐ</span><div><div class="t">彩乃さんに合宿出欠の確認（今日・明日とも未回答）</div><div class="d">9:00開始。合宿の中心メンバーのため開始前の確認がおすすめです。</div></div></div>
-  <div class="action"><span class="chip today">今日やる</span><div><div class="t">デロイト塩部さんへ返信（3日目）</div><div class="d">合宿後の夕方に。候補日は予定の空いている8/11(火)夕方以降〜8/12(水)が現実的です。</div></div></div>
-  <div class="action"><span class="chip today">今日やる</span><div><div class="t">ジョブカン承認をまとめて処理（16時以降・約15分）</div><div class="d">明日も合宿＋会食で処理時間が取れません。今夜が今週最後のまとまった空きです。</div></div></div>
-  <div class="action"><span class="chip check">要確認</span><div><div class="t">業績報告会（9/30・10/29）の出欠回答</div><div class="d">両日とも終日。回答は急ぎませんが、予定枠として先に押さえておくのがおすすめです。</div></div></div>
-  <div class="action"><span class="chip check">要確認</span><div><div class="t">8/7(金) 経理定例(10:00 Meet)→11:00京都ランチの移動ゼロ問題</div><div class="d">経理定例・自身の出欠も未回答のまま。移動中スマホ参加にするか、定例を欠席にするか明日までに決めると安心です。</div></div></div>
-  <div class="action"><span class="chip check">要確認</span><div><div class="t">8/19 療育課_業務分掌作成 — 巽さん辞退（有給）のまま</div><div class="d">斎藤さん・馬渕さんは承諾済み。実施かリスケか、合宿の合間にでも方針だけ決めておくと安心です。</div></div></div>
+  <h2>🎯 今日の残りアクション</h2>
+  <div class="action"><span class="chip now">進行中</span><div><div class="t">14:00–16:00 データ分析作業（勤怠×登園・広告ROI）</div><div class="d">明日8/8(土)予算確定・8/12予算会議の材料になります。経理・総務との自動化MTG設定もこの枠で。</div></div></div>
+  <div class="action"><span class="chip today">17時の空きで</span><div><div class="t">ジョブカン一括承認（志岐さんシフト申請含む）</div><div class="d">打刻エラー9件・休暇3件（甲斐さん事後申請2件含む）・残業1件・シフト申請。今日唯一の空き90分です。</div></div></div>
+  <div class="action"><span class="chip today">17時の空きで</span><div><div class="t">デロイト塩部さんへ一報（「8/12の打合せで共有します」）＋ RC営業定例（8/13）辞退回答</div><div class="d">どちらも1〜2分で終わります。</div></div></div>
+  <div class="action"><span class="chip check">要確認</span><div><div class="t">彩乃さん共有「社長室合宿_11期の現状課題に関して」／渡邊さん共有スプレッドシートに目通し</div><div class="d">合宿の決定事項の実行と直結する文書です。移動時間などの隙間で。</div></div></div>
+  <div class="action"><span class="chip check">要確認</span><div><div class="t">8/12 グラミン×予算会議の重複解消／業績報告会（9/30・10/29）の出欠回答</div><div class="d">急ぎではありませんが、週内の判断で心当たりが軽くなります。</div></div></div>
 </section>
 
 <section>
-  <h2>📅 今日のタイムライン <span class="count">8/5 水</span></h2>
+  <h2>📅 今日のタイムライン <span class="count">8/7 金・14:05現在</span></h2>
   <div class="card">
     <ul class="tl">
-      <li><span class="time">〜09:00</span><div class="body"><span class="gap">◯ 朝の空き — 彩乃さんへの出欠確認・砂田さんリスケ連絡はここで</span></div></li>
-      <li><span class="time">09:00–16:00</span><div class="body"><span class="title">社長室合宿（1日目）</span><span class="badge mtg">会議</span><div class="note">Meet: rpj-nzuk-ggx ｜ 巽さん承諾・彩乃さん未回答 ｜ 議題は「会議準備」タブ参照</div></div></li>
-      <li><span class="time">16:00〜</span><div class="body"><span class="gap">◯ 夕方以降フリー（今週唯一の会食なしの夜）— ジョブカン承認・デロイト返信・明日の重複解消をここで片付けると今週が楽になります</span></div></li>
+      <li class="done"><span class="time">09:00–10:00</span><div class="body"><span class="title">【事務】療育給与規定見直しMTG設定ほか</span><span class="badge work">終了</span></div></li>
+      <li class="done"><span class="time">10:00–11:00</span><div class="body"><span class="title">【社内経理コース定例MTG】</span><span class="badge work">終了</span></div></li>
+      <li class="done"><span class="time">11:00–14:00</span><div class="body"><span class="title">田中さま嫁 @コトブック_京都ランチMTG</span><span class="badge dinner">終了</span></div></li>
+      <li class="nowrow"><span class="time">14:00–16:00</span><div class="body"><span class="title">【作業】保育事業部合宿 事前準備②（データ分析）</span><span class="badge now">進行中</span><div class="note">勤怠×登園データ分析・広告ROIデータ準備・経理/総務MTG設定 ｜ 京都からの戻り時間分は短縮の可能性</div></div></li>
+      <li><span class="time">16:00–17:00</span><div class="body"><span class="title">勝部さま_MTG</span><span class="badge mtg">MTG</span><div class="note">Meet: hvx-zmgv-qww</div></div></li>
+      <li><span class="time">17:00–18:30</span><div class="body"><span class="gap">◯ 今日唯一の空き90分 — ジョブカン一括承認・デロイト一報・RC辞退はここで</span></div></li>
+      <li><span class="time">18:30–21:30</span><div class="body"><span class="title">パスタピュ @大阪EOウーマン</span><span class="badge dinner">会食</span></div></li>
+      <li><span class="time">23:00–23:30</span><div class="body"><span class="title">EDGE_経費精算</span><span class="badge work">タスク</span><div class="note">深夜枠。お疲れの場合は週明けへスライドも（明日は10時から予算確定）</div></div></li>
     </ul>
   </div>
 </section>
 
 <section>
-  <h2>📊 今週の拘束時間 <span class="count">合計 約66h</span></h2>
+  <h2>📊 今週の拘束時間 <span class="count">合計 約57.5h</span></h2>
   <div class="card">
-    <div class="week-row today-row"><span class="day"><b>8/5 水</b> 社長室合宿</span><div class="track"><div class="fill" style="width:58%"></div></div><span class="val">7.0h</span></div>
-    <div class="week-row"><span class="day">8/6 木 合宿・会食</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">12.0h</span></div>
-    <div class="week-row"><span class="day">8/7 金 MTG×5・会食</span><div class="track"><div class="fill" style="width:96%"></div></div><span class="val">11.5h</span></div>
-    <div class="week-row"><span class="day">8/8 土 予算確定</span><div class="track"><div class="fill" style="width:67%"></div></div><span class="val">8.0h</span></div>
-    <div class="week-row"><span class="day">8/9 日 保育部合宿</span><div class="track"><div class="fill" style="width:92%"></div></div><span class="val">11.0h</span></div>
-    <div class="week-row"><span class="day">8/10 月 来客・会食</span><div class="track"><div class="fill" style="width:79%"></div></div><span class="val">9.5h</span></div>
-    <div class="week-row"><span class="day">8/11 火 資料作業・京都</span><div class="track"><div class="fill" style="width:54%"></div></div><span class="val">6.5h</span></div>
-    <div class="footnote">⚠ 8/8(土)・8/9(日)もフル稼働。昨日まで空いていた8/11(火)に「12期方針資料作り込み」と「わかばちゃん_京都」が入りました。今夜16時以降が今週最大の自由時間です。</div>
+    <div class="week-row today-row"><span class="day"><b>8/7 金</b> MTG4本・会食</span><div class="track"><div class="fill" style="width:100%"></div></div><span class="val">11.5h</span></div>
+    <div class="week-row"><span class="day">8/8 土 予算確定</span><div class="track"><div class="fill" style="width:70%"></div></div><span class="val">8.0h</span></div>
+    <div class="week-row"><span class="day">8/9 日 保育部合宿</span><div class="track"><div class="fill" style="width:96%"></div></div><span class="val">11.0h</span></div>
+    <div class="week-row"><span class="day">8/10 月 来客・会食</span><div class="track"><div class="fill" style="width:83%"></div></div><span class="val">9.5h</span></div>
+    <div class="week-row"><span class="day">8/11 火 資料作業・京都</span><div class="track"><div class="fill" style="width:57%"></div></div><span class="val">6.5h</span></div>
+    <div class="week-row"><span class="day">8/12 水 朝8時〜・会食</span><div class="track"><div class="fill" style="width:83%"></div></div><span class="val">9.5h</span></div>
+    <div class="week-row"><span class="day">8/13 木 RC定例のみ</span><div class="track"><div class="fill" style="width:9%"></div></div><span class="val">1.0h</span></div>
+    <div class="footnote">⚠ 明日8/8(土)10:00-18:00予算確定・8/9(日)9:00-20:00保育事業部合宿と週末もフル稼働。まとまった自由時間は8/11(火)17時以降と8/13(木)です（8/13はRC定例を辞退すればほぼ終日空きます）。</div>
   </div>
 </section>
 </div>
 
 <!-- ============ 会議準備 ============ -->
 <div class="view" id="v-prep">
-<header class="page"><h1>会議準備</h1><div class="meta">今日・明日の会議の論点と資料 ｜ カレンダーの説明欄から自動抽出</div></header>
+<header class="page"><h1>会議準備</h1><div class="meta">今日残り・週末〜週明けの会議の論点と資料 ｜ カレンダーの説明欄から自動抽出</div></header>
 
 <section>
-  <h2>今日 8/5(水)</h2>
+  <h2>今日 8/7(金) 残り</h2>
   <div class="mtgcard">
-    <div class="head"><span class="tt">社長室合宿（1日目）</span><span class="tm">09:00–16:00 ｜ Meet: rpj-nzuk-ggx</span></div>
-    <div class="warnline">⚠ 井津元(彩乃)さんが出欠未回答（巽さんは承諾済み）</div>
-    <ul class="agenda">
-      <li>社長室体制の再設計（産育休などを踏まえて）</li>
-      <li>対外資料作成の負荷分散（経理・巽さんとの分担案）</li>
-      <li>広報の指揮命令系統（社員向け/顧客向け）</li>
-      <li>DX仕組み課の棚卸（ポータル・効率化・利用規定・システム相関図）</li>
-      <li>権限設計 ／ 産育休をふまえた長期方針</li>
-      <li>M&amp;A/財産処分のA案B案 ／ 助成金の取り逃がし再発防止体制</li>
-    </ul>
+    <div class="head"><span class="tt">勝部さま_MTG</span><span class="tm">16:00–17:00 ｜ Meet: hvx-zmgv-qww</span></div>
+  </div>
+  <div class="mtgcard">
+    <div class="head"><span class="tt">パスタピュ @大阪EOウーマン</span><span class="tm">18:30–21:30</span></div>
+  </div>
+  <div class="mtgcard done">
+    <div class="head"><span class="tt">終了: 事務ブロック（9:00）／ 経理コース定例（10:00）／ 京都ランチMTG（11:00）</span><span class="tm"></span></div>
+    <div class="links"><a href="https://docs.google.com/document/d/1iNtxjH4c2ykgQQ2Vqnnab5UQ3y4UMWFzMeJNSziB1ZQ/edit" target="_blank">📎 2026/08/07 経理コース運営/BPO（今朝の資料）</a></div>
   </div>
 </section>
 
 <section>
-  <h2>明日 8/6(木)</h2>
+  <h2>週末〜週明け</h2>
   <div class="mtgcard">
-    <div class="head"><span class="tt">社長室合宿（2日目）</span><span class="tm">09:00–16:00 ｜ Meet: wcw-acaf-vgs</span></div>
-    <div class="warnline">⚠ 13:00–14:00 に「砂田さん_活性協」が重複したまま ／ 彩乃さん出欠未回答</div>
-    <div class="agenda">1日目の積み残し＋決定事項の実行割り振り。昼休憩の位置を砂田さん対応に合わせて調整する案もあります。</div>
+    <div class="head"><span class="tt">保育・療育予算の確定</span><span class="tm">明日 8/8(土) 10:00–18:00</span></div>
+    <div class="agenda">8/12(水)の保育事業部予算会議・8/17の12期方針確定会議につながる確定作業。今日14:00の作業枠のデータ分析が材料になります。</div>
   </div>
   <div class="mtgcard">
-    <div class="head"><span class="tt">砂田さん_活性協</span><span class="tm">13:00–14:00</span></div>
-    <div class="warnline">⚠ 合宿2日目と重複 — 本日中の判断を</div>
+    <div class="head"><span class="tt">保育事業部 合宿（会議 9:00–20:00）</span><span class="tm">8/9(日) 終日</span></div>
+    <div class="warnline">⚠ 良さんが出欠未回答（佐橋さんは承諾済み）— 明後日です</div>
   </div>
   <div class="mtgcard">
-    <div class="head"><span class="tt">「RC] 営業定例MTG</span><span class="tm">17:00–18:00 ｜ Meet</span></div>
-    <div class="warnline">⚠ ご自身の出欠未回答 ／ ゲストの大半が辞退済み ／ 同時刻に（移動）→18:00郷戸社長会食</div>
-    <div class="agenda">移動と重なるため実質参加は難しそうです。辞退回答がおすすめ。</div>
-  </div>
-  <div class="mtgcard">
-    <div class="head"><span class="tt">郷戸社長 @会食（鮨 やしま）</span><span class="tm">18:00–22:00</span></div>
-    <div class="agenda">大阪市北区中崎1-8-14 1F ｜ 050-5456-8315</div>
+    <div class="head"><span class="tt">8/10(月): キックオフ準備作業（13:00）→ 杉浦社外取締役来社（15:30）→ 権さん会食（18:00）</span><span class="tm"></span></div>
+    <div class="agenda">キックオフ動画の撮影日確定（9/1公開から逆算で8月中旬撮影）・資料展開の確認</div>
   </div>
   <div class="footnote">💡 会議資料の下書き（アジェンダ表・論点整理シート）は、チャットで「○○の資料つくって」と言えば作成し、資料ライブラリに格納します。requests.md への追記でも毎朝処理します。</div>
 </section>
@@ -308,15 +304,16 @@
 <header class="page"><h1>受信箱</h1><div class="meta">3系統を統合: animo-g.net Gmail（直接）／ 💬 ChatWork（連携待ち）／ ✉ animo-group.co.jp（連携待ち）</div></header>
 
 <section>
-  <h2>要対応 <span class="count">5件</span></h2>
+  <h2>要対応 <span class="count">5件＋継続3件</span></h2>
   <div class="card">
-    <div class="mail"><span class="from">デロイト 塩部さん</span><div class="body"><div class="subj">【伴走支援】近況共有の打診 → <b>要返信（3日目）</b></div><div class="snip">「最新状況の共有」「デロイトの支援について」Teams会議の打診（石橋さん同報）。8/3受信から返信待ちが続いています</div></div></div>
-    <div class="mail"><span class="from">ジョブカン</span><div class="body"><div class="subj">今朝のアラート: 打刻エラー15件・未承認打刻1・休暇1・残業1・遅刻早退1 → <b>要承認</b></div><div class="snip">ほかに三浦礼恵さん残業申請・志岐春香さんシフト申請・飯端さん打刻修正×3（1件取下げ）・遅刻通知（青木さくらさん）</div></div></div>
-    <div class="mail"><span class="from">井津元さん</span><div class="body"><div class="subj">新着: 業績報告会 招待2件（9/30・10/29 各10:00–18:00） → <b>要回答</b></div><div class="snip">巽さん・良さん・馬渕さん・渡邊さん・佐橋さん同報。終日枠のため早めの回答がおすすめ</div></div></div>
-    <div class="mail"><span class="from">巽さん</span><div class="body"><div class="subj">辞退: 8/19 療育課_業務分掌作成 → <b>要判断</b></div><div class="snip">有給休暇のため欠席。斎藤さん・馬渕さんは承諾済み。実施かリスケかの判断が必要（8/19まで余裕あり）</div></div></div>
-    <div class="mail"><span class="from">Google Cloud</span><div class="body"><div class="subj">2段階認証の必須化（10/20〜） → <b>要対応（期限あり）</b></div><div class="snip">10/20以降、未設定だとGoogle Cloudコンソールにアクセス不可に。情報システム担当への展開がおすすめ（2通着信）</div></div></div>
-    <div class="mail"><span class="from">巽さん</span><div class="body"><div class="subj">大塚6月 月例報告書 送付済み（情報）</div><div class="snip">しごと財団・小島様宛に送付完了（CC共有）— 対応不要</div></div></div>
-    <div class="mail"><span class="from">Anthropic</span><div class="body"><div class="subj">Claudeアカウントに新しい端末が追加されました（情報）</div><div class="snip">ダッシュボード関連のセットアップに伴うものであれば対応不要。心当たりがなければご確認を</div></div></div>
+    <div class="mail"><span class="from">志岐春香さん</span><div class="body"><div class="subj">🆕 13:57 シフト申請（8/3〜8/17ほか複数日） → <b>要承認</b></div><div class="snip">ジョブカン経由。17:00–18:30の空きでの一括処理に含めるのがおすすめ</div></div></div>
+    <div class="mail"><span class="from">ジョブカン</span><div class="body"><div class="subj">今朝のアラート: 打刻エラー9件・未承認休暇3件・未承認打刻1・残業1・遅刻早退1 → <b>要承認（未処理）</b></div><div class="snip">甲斐さん（大塚園）の8/5・8/6分事後休暇申請2件を含む。今朝は飯端里香さん（秘書室）の遅刻通知（9:11時点未出勤）も</div></div></div>
+    <div class="mail"><span class="from">彩乃さん</span><div class="body"><div class="subj">「社長室合宿_11期の現状課題に関して」ドキュメント共有 → <b>要確認</b></div><div class="snip">昨日15:15に編集招待。合宿2日間の決定事項の実行と直結。8/5共有の採用業務引継書（＋NotebookLM規定書）も未読なら合わせて</div></div></div>
+    <div class="mail"><span class="from">渡邊卓也さん</span><div class="body"><div class="subj">スプレッドシート「20230222-01-01.xlsx」編集招待 → <b>要確認</b></div><div class="snip">昨日17:16共有。ファイル名からは内容不明のため、経理定例（今朝）関連の可能性あり</div></div></div>
+    <div class="mail"><span class="from">PR TIMES</span><div class="body"><div class="subj">タスク管理ツール「Jooto」2027年7月末でサービス終了 → <b>要判断（急ぎません）</b></div><div class="snip">利用中であれば1年以内に移行先の検討が必要。社内で使っているか確認がおすすめ</div></div></div>
+    <div class="mail"><span class="from">デロイト 塩部さん</span><div class="body"><div class="subj">【継続】近況共有の打診 → <b>要返信（5日目）</b></div><div class="snip">8/12(水)16:30にデロイト/SAP打合せあり。「12日の打合せで共有」と一報入れるのがおすすめ</div></div></div>
+    <div class="mail"><span class="from">井津元さん</span><div class="body"><div class="subj">【継続】業績報告会 招待2件（9/30・10/29 各10:00–18:00） → <b>要回答</b></div><div class="snip">終日枠のため早めの回答がおすすめ</div></div></div>
+    <div class="mail"><span class="from">Google Cloud</span><div class="body"><div class="subj">【継続】2段階認証の必須化（10/20〜） → <b>要対応（期限あり）</b></div><div class="snip">情報システム担当への展開がおすすめ</div></div></div>
   </div>
 </section>
 
@@ -338,14 +335,16 @@
 <section>
   <h2>今週の商談・提案の動き（カレンダー・メールから検出）</h2>
   <div class="card">
-    <div class="mail"><span class="from">8/6 18:00</span><div class="body"><div class="subj">郷戸社長 @会食（鮨 やしま）</div><div class="snip">明日夜</div></div></div>
-    <div class="mail"><span class="from">8/7 11:00</span><div class="body"><div class="subj">田中さま嫁 @コトブック_京都ランチMTG</div></div></div>
-    <div class="mail"><span class="from">8/7 16:00</span><div class="body"><div class="subj">勝部さま_MTG（Meet）</div></div></div>
-    <div class="mail"><span class="from">8/7 18:30</span><div class="body"><div class="subj">パスタピュ @大阪EOウーマン</div></div></div>
+    <div class="mail"><span class="from">今日 16:00</span><div class="body"><div class="subj">勝部さま_MTG（Meet）</div></div></div>
+    <div class="mail"><span class="from">今日 18:30</span><div class="body"><div class="subj">パスタピュ @大阪EOウーマン</div></div></div>
     <div class="mail"><span class="from">8/10 15:30</span><div class="body"><div class="subj">杉浦社外取締役_来社</div></div></div>
     <div class="mail"><span class="from">8/10 18:00</span><div class="body"><div class="subj">権さん @会食</div></div></div>
-    <div class="mail"><span class="from">継続中</span><div class="body"><div class="subj">デロイト伴走支援（塩部さん）→ <b>返信待ち3日目</b> — 今日の返信推奨</div></div></div>
-    <div class="mail"><span class="from">継続中</span><div class="body"><div class="subj">学校法人ポータル / BPO案件 → 先方園への訪問日程 調整状況確認（8/7 事務ブロックにタスク化済み）</div></div></div>
+    <div class="mail"><span class="from">8/11 13:00</span><div class="body"><div class="subj">わかばちゃん_京都</div></div></div>
+    <div class="mail"><span class="from">8/12 08:00</span><div class="body"><div class="subj">さなぎCentral連携MTG</div></div></div>
+    <div class="mail"><span class="from">8/12 16:30</span><div class="body"><div class="subj">デロイト/SAP 打合せ（Zoom定例）→ 塩部さん返信5日目の件はここで解消可能</div></div></div>
+    <div class="mail"><span class="from">8/12 18:00</span><div class="body"><div class="subj">まいさん @会食</div></div></div>
+    <div class="mail"><span class="from">本日終了</span><div class="body"><div class="subj">田中さま嫁 @コトブック_京都ランチMTG（11:00–14:00）</div></div></div>
+    <div class="mail"><span class="from">継続中</span><div class="body"><div class="subj">学校法人ポータル / BPO案件 → 先方園への訪問日程 調整状況確認（今朝の事務ブロックのタスク）</div></div></div>
   </div>
 </section>
 
@@ -361,20 +360,23 @@
 <section>
   <h2>AI作成（このプロジェクト内）</h2>
   <div class="card">
-    <div class="doc"><span class="ic">📊</span><div><div class="tt">経営ダッシュボード（この画面）</div><div class="dd">毎平日7:00自動更新 ｜ Web版 https://noriko2729.github.io/keiei-dashboard/（パスワード無し・URLを知る人のみ閲覧）／携帯は朝の通知から</div></div></div>
+    <div class="doc"><span class="ic">📊</span><div><div class="tt">経営ダッシュボード（この画面）</div><div class="dd">毎平日7:00自動更新 ｜ Web版 https://noriko2729.github.io/keiei-dashboard/（パスワード無し・URL直接表示）／携帯は朝の通知から</div></div></div>
     <div class="doc"><span class="ic">📄</span><div><div class="tt">経営ダッシュボード 仕様書</div><div class="dd">claude/keiei-dashboard-spec.md ｜ 画面構成・連携ルールの正本。チャットで「仕様書見せて」で表示できます</div></div></div>
-    <div class="doc"><span class="ic">🔐</span><div><div class="tt">Web版発行の仕組み（GitHub Pages）</div><div class="dd">claude/keiei-dashboard-web-publish.md ｜ 固定URL発行のセットアップ手順と運用メモ</div></div></div>
-    <div class="doc"><span class="ic">🎨</span><div><div class="tt">ダッシュボード テンプレート</div><div class="dd">claude/keiei-dashboard-template.html ｜ 毎朝の生成のベース（8/5版に更新済み）</div></div></div>
+    <div class="doc"><span class="ic">🌐</span><div><div class="tt">Web版発行の仕組み（GitHub Pages）</div><div class="dd">claude/keiei-dashboard-web-publish.md ｜ 固定URL発行のセットアップ手順と運用メモ（パスワード無しの平文発行）</div></div></div>
+    <div class="doc"><span class="ic">🎨</span><div><div class="tt">ダッシュボード テンプレート</div><div class="dd">claude/keiei-dashboard-template.html ｜ 毎朝の生成のベース（8/7午後版に更新済み）</div></div></div>
   </div>
-  <div class="footnote">💡 チャットや requests.md で作成を依頼した資料（提案書・議事録・告知画像など）は、ここに自動で追記されていきます。本日の新規依頼はありませんでした。</div>
+  <div class="footnote">💡 チャットや requests.md で作成を依頼した資料（提案書・議事録・告知画像など）は、ここに自動で追記されていきます。本日の新規依頼はありませんでした（requests.md 8/7 14時確認）。</div>
 </section>
 
 <section>
   <h2>会議関連資料（Google Drive）</h2>
   <div class="card">
+    <div class="doc"><span class="ic">📝</span><div><div class="tt"><a href="https://docs.google.com/document/d/1iNtxjH4c2ykgQQ2Vqnnab5UQ3y4UMWFzMeJNSziB1ZQ/edit" target="_blank">2026/08/07 経理コース運営/BPO</a></div><div class="dd">今朝10:00 社内経理コース定例の資料</div></div></div>
+    <div class="doc"><span class="ic">📄</span><div><div class="tt">社長室合宿_11期の現状課題に関して</div><div class="dd">彩乃さんから昨日15:15共有（メールの「開く」から）。合宿の決定事項フォロー — 要目通し</div></div></div>
+    <div class="doc"><span class="ic">📊</span><div><div class="tt">20230222-01-01.xlsx</div><div class="dd">渡邊さんから昨日17:16共有（メールの「開く」から）。内容確認を</div></div></div>
+    <div class="doc"><span class="ic">📄</span><div><div class="tt">採用業務引継書（ハローワーク担当）＋引継ぎ規定書</div><div class="dd">彩乃さんから8/5共有。産育休を見据えた引継ぎ準備</div></div></div>
+    <div class="doc"><span class="ic">📝</span><div><div class="tt"><a href="https://docs.google.com/document/d/1YwsS4fliMTh7jRXLHvVA2Mq71e5_n259uSg-uwz4rdo/edit" target="_blank">メモ - 「社長室合宿」</a></div><div class="dd">8/5-8/6 合宿のメモ</div></div></div>
     <div class="doc"><span class="ic">📁</span><div><div class="tt"><a href="https://drive.google.com/drive/folders/1vIMjAeUNd4c3ZejC5dKQWvEHCS3-3Vej" target="_blank">00_議事録フォルダ</a></div><div class="dd">就労支援MTGなどの議事録格納先</div></div></div>
-    <div class="doc"><span class="ic">📝</span><div><div class="tt"><a href="https://docs.google.com/document/d/1iNtxjH4c2ykgQQ2Vqnnab5UQ3y4UMWFzMeJNSziB1ZQ/edit" target="_blank">2026/08/07 経理コース運営/BPO</a></div><div class="dd">8/7(金) 10:00 社内経理コース定例の資料</div></div></div>
-    <div class="doc"><span class="ic">📝</span><div><div class="tt"><a href="https://docs.google.com/document/d/1QbCVuA_WtXuMRRrWX_p16o5VS-B66yTXupdIpc5DTWk/edit" target="_blank">20260804 就労支援MTG</a></div><div class="dd">昨日 8/4(火) の議事メモ</div></div></div>
   </div>
 </section>
 </div>
@@ -385,19 +387,20 @@
 
 <section>
   <h2>クラウド（Claude スケジュールタスク）</h2>
-  <div class="auto"><span class="st ok">正常</span><div><div class="tt">経営ダッシュボード 毎朝7時自動更新</div><div class="dd">平日 07:00 JST ｜ 本日 8/5 07:11 実行・成功 ｜ 次回: 8/6(木) 07:00 ｜ 更新先: この画面・Web版・携帯通知</div></div></div>
-  <div class="auto"><span class="st setup">設定待ち</span><div><div class="tt">Web版発行（GitHub Pages）</div><div class="dd">https://noriko2729.github.io/keiei-dashboard/ ｜ 本日 8/5 は対話セッションから手動発行（パスワード無し）｜ 朝の自動発行はリポジトリ連携の設定待ちのため停止中</div></div></div>
+  <div class="auto"><span class="st ok">正常</span><div><div class="tt">経営ダッシュボード 毎朝7時自動更新</div><div class="dd">平日 07:00 JST ｜ 本日 8/7 は 10:15版に続き 14:05 に再実行・成功（最新データで再生成） ｜ 次回: 8/10(月) 07:00 ｜ 更新先: この画面・Web版・携帯通知</div></div></div>
+  <div class="auto"><span class="st setup">連携待ち</span><div><div class="tt">Web版発行（GitHub Pages・平文）</div><div class="dd">https://noriko2729.github.io/keiei-dashboard/ ｜ 本日8/7 14:05の自動発行もサンドボックス制限で不可（Actions API 403・git pushも403。トークンは有効・読み取りは可）。Web版は8/5版のままです ｜ プロジェクトのソースに noriko2729/keiei-dashboard を追加すると自動化できます</div></div></div>
 </section>
 
 <section>
   <h2>ローカル（Mac側のタスク）</h2>
-  <div class="auto"><span class="st setup">連携待ち</span><div><div class="tt">ChatWork morning tasks</div><div class="dd">保存先doc（claude/chatwork-morning.md）が本日朝も未作成 ｜ タスクの指示文への保存先追記待ち → 完了するとダッシュボードに緊急案件が載ります</div></div></div>
-  <div class="auto"><span class="st setup">連携待ち</span><div><div class="tt">Daily inbox triage</div><div class="dd">保存先doc（claude/inbox-triage.md）が本日朝も未作成 ｜ 完了すると animo-group 受信箱が載ります</div></div></div>
+  <div class="auto"><span class="st setup">連携待ち</span><div><div class="tt">ChatWork morning tasks</div><div class="dd">保存先doc（claude/chatwork-morning.md）が8/7 14時時点も未作成 ｜ タスクの指示文への保存先追記待ち → 完了するとダッシュボードに緊急案件が載ります</div></div></div>
+  <div class="auto"><span class="st setup">連携待ち</span><div><div class="tt">Daily inbox triage</div><div class="dd">保存先doc（claude/inbox-triage.md）が8/7 14時時点も未作成 ｜ 完了すると animo-group 受信箱が載ります</div></div></div>
 </section>
 
 <section>
   <h2>その他の自動処理</h2>
-  <div class="auto"><span class="st setup">経過観察</span><div><div class="tt">Google Apps Script「無題のプロジェクト」</div><div class="dd">8/1・8/2に連続失敗 → 8/3以降は新規の失敗通知なし。ただし何のスクリプトかは未確認のままです。落ち着いたタイミングでの中身確認をおすすめします。</div></div></div>
+  <div class="auto"><span class="st setup">経過観察</span><div><div class="tt">Google Apps Script「無題のプロジェクト」</div><div class="dd">8/1・8/2に連続失敗 → 以降5日間、新規の失敗通知なし。落ち着いたタイミングでの中身確認をおすすめします。</div></div></div>
+  <div class="auto"><span class="st ok">解消</span><div><div class="tt">TimeRex（日程調整）</div><div class="dd">8/5の障害は当日中に解消済み。対応不要です。</div></div></div>
 </section>
 </div>
 
@@ -405,12 +408,12 @@
 <div class="view" id="v-analysis">
 <header class="page"><h1>分析センター</h1><div class="meta">横断分析（データ接続の準備中）</div></header>
 <section>
-  <div class="placeholder"><b>データ接続後に有効化されます。</b><br>候補: 面談実績の推移（カレンダー実測で今すぐ可能）／ 勤怠×登園状況の分析（8/7に自らデータ準備を予定 — その際に組み込めます）／ 広告の投資対効果（リスティング月30–36万円）。<br>「面談実績の推移を出して」など、チャットで個別依頼いただければ先行して作成できます。</div>
+  <div class="placeholder"><b>データ接続後に有効化されます。</b><br>候補: 面談実績の推移（カレンダー実測で今すぐ可能）／ 勤怠×登園状況の分析（本日8/7 14:00の作業枠でデータ準備中 — 出来上がったデータを共有いただければ組み込めます）／ 広告の投資対効果（リスティング月30–36万円）。<br>「面談実績の推移を出して」など、チャットで個別依頼いただければ先行して作成できます。</div>
 </section>
 </div>
 
 <footer>
-  毎平日 朝7:00（JST）に Google Calendar・Gmail の実データから自動更新 ｜ 生成: 2026-08-05 07:11 ｜ Web版発行: 2026-08-05 手動 ｜ 更新の依頼・アクションの実行（メール下書き・予定変更・資料作成）はチャットからいつでも。
+  毎平日 朝7:00（JST）に Google Calendar・Gmail の実データから自動更新 ｜ 生成: 2026-08-07 14:05（午後版） ｜ 更新の依頼・アクションの実行（メール下書き・予定変更・資料作成）はチャットからいつでも。
 </footer>
 </main>
 </div>
